@@ -31,7 +31,7 @@ datagen1 = keras.preprocessing.image.ImageDataGenerator(rescale=1./70,
                                    vertical_flip = True,
                                    fill_mode= 'wrap',
                                    )
-datagen2 = keras.preprocessing.image.ImageDataGenerator(rescale=1./70)
+datagen2 = keras.preprocessing.image.ImageDataGenerator(rescale=1./70) 
 
 
 train_generator = datagen1.flow_from_directory(train_path,
