@@ -1,0 +1,97 @@
+# Code done in Google Colab so names of files correspond to the user's Drive
+
+import tensorflow as tf
+import cv2 as cv
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Activation, Dropout, Flatten, Dense
+import numpy as np
+import matplotlib.pyplot as plt
+from google.colab import drive
+drive.mount('/content/gdrive')
+import os
+
+folder_name = "Quant Bio - Wood Debris (3 Classes)"
+
+
+train_path = os.path.abspath("gdrive/My Drive/Colab Notebooks/" + folder_name +"/Training Data(70%)") #path of main folder
+validation_path = os.path.abspath("gdrive/My Drive/Colab Notebooks/" + folder_name+ "/Validation Data(15%)") #path of main folder
+test_path = os.path.abspath("gdrive/My Drive/Colab Notebooks/" + folder_name + "/Validation Data(15%)") #path of main folder
+
+classes = len(os.listdir(train_path))
+
+datagen1 = keras.preprocessing.image.ImageDataGenerator(rescale=1./70,
+                                   rotation_range=30,
+                                   width_shift_range=0.2,
+                                   height_shift_range=0.2,
+                                   shear_range=0.2,
+                                   zoom_range=0.2,
+                                   horizontal_flip = True,
+                                   vertical_flip = True,
+                                   fill_mode= 'wrap',
+                                   )
+datagen2 = keras.preprocessing.image.ImageDataGenerator(rescale=1./70)
+
+
+train_generator = datagen1.flow_from_directory(train_path,
+                                          target_size=(60, 60),
+                                          color_mode='rgb',
+                                          batch_size = 10,
+                                          shuffle=True,
+                                          #subset='training'
+                                          )
+
+validation_generator = datagen2.flow_from_directory(validation_path,
+                                          target_size=(60, 60),
+                                          color_mode='rgb',
+                                          batch_size = 10,
+                                          shuffle=True,
+                                          #subset='validation'
+                                          )
+
+test_generator = datagen2.flow_from_directory(test_path,
+                                          target_size=(60, 60),
+                                          color_mode='rgb',
+                                          batch_size = 10,
+                                          shuffle=False,
+                                          #subset='validation'
+                                        )
+model = Sequential()
+model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', input_shape=(60,60,3)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.2))
+
+model.add(Conv2D(64, kernel_size=(3, 3)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.2))
+
+
+model.add(Flatten())
+
+
+model.add(Dense(64, activation='relu'))
+model.add(Dense(classes, activation='softmax'))
+
+model.compile(optimizer="rmsprop", loss="categorical_crossentropy", metrics=["accuracy"])
+
+# epochs is how many times the model sees the information, randomly picks from the data but in a different order
+h = model.fit(train_generator, epochs=20, steps_per_epoch=28, validation_data=validation_generator, validation_steps=11)
+
+test_loss, test_acc = model.evaluate(test_generator)
+
+print(test_loss, test_acc)
+#to do it on one image do model.predict( [test_image[7]] )
+#prediction = model.predict(test_generator)
+
+print(test_acc)
+keysdict = list(test_generator.class_indices.keys())
+image_name=test_generator.class_indices
+
+print(image_name)
+
+for x, y in test_generator.next():
+  pred = np.argmax(model.predict(x))
+  label = keysdict[pred]
+  actual = keysdict[y]
+  print("Predicted: " + label + "Actual" + actual)
